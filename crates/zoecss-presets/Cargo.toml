@@ -6,4 +6,9 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[dependencies]
+zoecss-core = { path = "../zoecss-core" }
+zoecss-config = { path = "../zoecss-config" }
+regex = "1"
+
 [lib]

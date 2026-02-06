@@ -65,3 +65,8 @@ version = "0.1.0"
 [[package]]
 name = "zoecss-presets"
 version = "0.1.0"
+dependencies = [
+ "regex",
+ "zoecss-config",
+ "zoecss-core",
+]
