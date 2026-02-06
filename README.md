@@ -19,6 +19,6 @@ ZoeCSS is a monorepo that contains the following crates (Rust packages):
 
 ZoeCSS is deeply inspired by the work of [Anthony Fu](https://antfu.me/posts/reimagine-atomic-css) on [UnoCSS](https://github.com/unocss/unocss), please check it out!
 
-The name « Zoe » is an homage to [Zoé](https://en.wikipedia.org/wiki/Zo%C3%A9_(reactor)), the first french nuclear reactor, and to the [Joliot-Curie family](https://en.wikipedia.org/wiki/Curie_family), pioneers of nuclear science and chemistry.
+The name « Zoe » (pronounced zoh-AY or /zo.e/) is an homage to [Zoé](https://en.wikipedia.org/wiki/Zo%C3%A9_(reactor)), the first french nuclear reactor, and to the [Joliot-Curie family](https://en.wikipedia.org/wiki/Curie_family), pioneers of nuclear science and chemistry.
 
 ZoeCSS is an open-source project born from [Bruits](https://bruits.org/), a Rust-focused collective 💛
