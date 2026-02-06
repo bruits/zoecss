@@ -4,6 +4,7 @@
 //! It models CSS entries, rules (static, pattern, dynamic), themes, variants, presets,
 //! and the top-level configuration.
 
+pub mod compiled;
 pub mod config;
 pub mod entries;
 pub mod preset;
@@ -11,6 +12,7 @@ pub mod rule;
 pub mod theme;
 pub mod variant;
 
+pub use compiled::{CompiledConfig, CompiledRegexRule};
 pub use config::Config;
 pub use entries::{CssEntries, CssEntry};
 pub use preset::Preset;
