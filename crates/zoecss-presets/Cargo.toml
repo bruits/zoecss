@@ -1,0 +1,9 @@
+[package]
+name = "zoecss-presets"
+version = "0.1.0"
+description = "Composable config presets for ZoeCSS"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]

@@ -1,0 +1,11 @@
+[package]
+name = "zoecss"
+version = "0.1.0"
+description = "CLI for ZoeCSS — scan, extract, cache, and output CSS"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "zoecss"
+path = "src/main.rs"

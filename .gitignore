@@ -1,0 +1,9 @@
+target
+dist
+node_modules
+**/generated/*
+!**/generated/README.md
+data
+codeql-db/
+*.sarif
+.DS_Store
