@@ -1,9 +1,9 @@
 //! Top-level ZoeCSS configuration.
 
+use zoecss_core::{Theme, Variant};
+
 use crate::preset::Preset;
 use crate::rule::Rule;
-use crate::theme::Theme;
-use crate::variant::Variant;
 
 /// Top-level ZoeCSS configuration, aggregating presets and user overrides.
 #[derive(Debug, Clone)]
@@ -66,7 +66,7 @@ impl Default for Config {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::entries::{CssEntries, CssEntry};
+    use zoecss_core::{CssEntries, CssEntry};
 
     #[test]
     fn default_config_is_empty() {

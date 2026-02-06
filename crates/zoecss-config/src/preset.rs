@@ -2,9 +2,9 @@
 
 use std::borrow::Cow;
 
+use zoecss_core::{Theme, Variant};
+
 use crate::rule::Rule;
-use crate::theme::Theme;
-use crate::variant::Variant;
 
 /// A composable configuration preset — a reusable bundle of rules, variants, and theme values.
 #[derive(Debug, Clone)]
@@ -35,7 +35,7 @@ impl Default for Preset {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::entries::{CssEntries, CssEntry};
+    use zoecss_core::{CssEntries, CssEntry};
 
     #[test]
     fn new_preset_is_empty() {

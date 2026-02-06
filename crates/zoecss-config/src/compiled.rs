@@ -10,11 +10,10 @@ use std::collections::HashMap;
 use regex::Regex;
 use regex::RegexSet;
 
+use zoecss_core::{CssEngine, CssEntries, CssEntry, Theme, Variant};
+
 use crate::config::Config;
-use crate::entries::CssEntries;
 use crate::rule::Rule;
-use crate::theme::Theme;
-use crate::variant::Variant;
 
 /// A compiled regex rule, ready for capture extraction on match.
 #[derive(Debug, Clone)]
@@ -101,21 +100,114 @@ impl CompiledConfig {
             .collect()
     }
 
-    /// O(1) lookup for a variant by name.
-    pub fn get_variant(&self, name: &str) -> Option<&Variant> {
-        self.variants.get(name)
-    }
-
-    /// Returns the theme, needed for `$theme(section, key)` substitution and dynamic handlers.
+    /// Returns the theme, needed for `{theme.section.key}` substitution and dynamic handlers.
     pub fn theme(&self) -> &Theme {
         &self.theme
     }
 }
 
+impl CssEngine for CompiledConfig {
+    fn resolve_token(&self, token: &str) -> Option<CssEntries> {
+        if let Some(entries) = self.get_static(token) {
+            return Some(entries.clone());
+        }
+
+        let matches = self.match_regex(token);
+        for rule in matches {
+            match rule {
+                CompiledRegexRule::Pattern { regex, template } => {
+                    if let Some(entries) = substitute_captures(template, regex, token, &self.theme)
+                    {
+                        return Some(entries);
+                    }
+                }
+                CompiledRegexRule::Dynamic { regex, handler } => {
+                    if regex.is_match(token)
+                        && let Some(entries) = handler(token, &self.theme)
+                    {
+                        return Some(entries);
+                    }
+                }
+            }
+        }
+
+        None
+    }
+
+    fn get_variant(&self, name: &str) -> Option<&Variant> {
+        self.variants.get(name)
+    }
+}
+
+/// Replaces `$1`, `$2`… with regex capture groups and `{theme.section.key}`
+/// with theme lookups. Returns `None` if a required capture is missing or a
+/// theme lookup fails.
+fn substitute_captures(
+    template: &CssEntries,
+    regex: &Regex,
+    token: &str,
+    theme: &Theme,
+) -> Option<CssEntries> {
+    let caps = regex.captures(token)?;
+
+    let entries = template
+        .0
+        .iter()
+        .map(|entry| {
+            let property = substitute_str(&entry.property, &caps, theme)?;
+            let value = substitute_str(&entry.value, &caps, theme)?;
+            Some(CssEntry::new(property, value))
+        })
+        .collect::<Option<Vec<_>>>()?;
+
+    Some(CssEntries::new(entries))
+}
+
+/// Performs `$N` capture and `{theme.section.key}` substitution on a single string.
+fn substitute_str(input: &str, caps: &regex::Captures<'_>, theme: &Theme) -> Option<String> {
+    let mut result = input.to_owned();
+
+    // Replace $1, $2, … capture placeholders (descending order avoids $1 shadowing $10).
+    for i in (1..caps.len()).rev() {
+        let placeholder = format!("${i}");
+        if result.contains(&placeholder) {
+            let value = caps
+                .get(i)
+                .map(|m: regex::Match<'_>| m.as_str())
+                .unwrap_or("");
+            result = result.replace(&placeholder, value);
+        }
+    }
+
+    // Replace {theme.section.key} placeholders.
+    while let Some(start) = result.find("{theme.") {
+        let end = result[start..].find('}')? + start;
+        let path = &result[start + 7..end]; // skip "{theme."
+        let (section, key) = path.split_once('.')?;
+        let value = theme.get(section, key)?;
+        result = format!("{}{value}{}", &result[..start], &result[end + 1..]);
+    }
+
+    // Reject if any $N placeholder survived (out-of-range capture reference).
+    if has_unresolved_placeholder(&result) {
+        return None;
+    }
+
+    Some(result)
+}
+
+/// Returns `true` when `s` contains a `$` immediately followed by an ASCII digit.
+fn has_unresolved_placeholder(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    bytes
+        .windows(2)
+        .any(|w| w[0] == b'$' && w[1].is_ascii_digit())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::entries::CssEntry;
+    use zoecss_core::generate;
 
     #[test]
     fn compile_empty_config() {
@@ -289,5 +381,280 @@ mod tests {
             }
             _ => panic!("expected Pattern"),
         }
+    }
+
+    // --- generate() integration tests ---
+
+    fn compile(config: Config) -> CompiledConfig {
+        CompiledConfig::compile(config.merge())
+    }
+
+    #[test]
+    fn generate_static_rule() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Static {
+            token: "flex".into(),
+            entries: CssEntries::new(vec![CssEntry::new("display", "flex")]),
+        });
+        let compiled = compile(config);
+        assert_eq!(
+            generate(&compiled, "flex").unwrap(),
+            ".flex { display: flex; }"
+        );
+    }
+
+    #[test]
+    fn generate_pattern_rule_with_captures() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Pattern {
+            pattern: r"^p-(\d+)$".into(),
+            template: CssEntries::new(vec![CssEntry::new("padding", "$1rem")]),
+        });
+        let compiled = compile(config);
+        assert_eq!(
+            generate(&compiled, "p-4").unwrap(),
+            ".p-4 { padding: 4rem; }"
+        );
+    }
+
+    #[test]
+    fn generate_pattern_rule_with_theme_substitution() {
+        let mut config = Config::new();
+        config.theme.insert("colors", "red", "#ef4444");
+        config.rules.push(Rule::Pattern {
+            pattern: r"^text-(.+)$".into(),
+            template: CssEntries::new(vec![CssEntry::new("color", "{theme.colors.$1}")]),
+        });
+        let compiled = compile(config);
+        assert_eq!(
+            generate(&compiled, "text-red").unwrap(),
+            ".text-red { color: #ef4444; }"
+        );
+    }
+
+    #[test]
+    fn generate_dynamic_rule() {
+        fn handler(_token: &str, _theme: &Theme) -> Option<CssEntries> {
+            Some(CssEntries::new(vec![CssEntry::new("color", "red")]))
+        }
+
+        let mut config = Config::new();
+        config.rules.push(Rule::Dynamic {
+            pattern: r"^custom-(.+)$".into(),
+            handler,
+        });
+        let compiled = compile(config);
+        assert_eq!(
+            generate(&compiled, "custom-foo").unwrap(),
+            ".custom-foo { color: red; }"
+        );
+    }
+
+    #[test]
+    fn generate_unknown_token_returns_none() {
+        let compiled = compile(Config::new());
+        assert!(generate(&compiled, "does-not-exist").is_none());
+    }
+
+    #[test]
+    fn generate_selector_variant() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Static {
+            token: "flex".into(),
+            entries: CssEntries::new(vec![CssEntry::new("display", "flex")]),
+        });
+        config.variants.push(Variant::Selector {
+            name: "hover".into(),
+            template: "&:hover".into(),
+        });
+        let compiled = compile(config);
+        assert_eq!(
+            generate(&compiled, "hover:flex").unwrap(),
+            ".hover\\:flex:hover { display: flex; }"
+        );
+    }
+
+    #[test]
+    fn generate_at_rule_variant() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Static {
+            token: "flex".into(),
+            entries: CssEntries::new(vec![CssEntry::new("display", "flex")]),
+        });
+        config.variants.push(Variant::AtRule {
+            name: "sm".into(),
+            rule: "@media (min-width: 640px)".into(),
+        });
+        let compiled = compile(config);
+        assert_eq!(
+            generate(&compiled, "sm:flex").unwrap(),
+            "@media (min-width: 640px) { .sm\\:flex { display: flex; } }"
+        );
+    }
+
+    #[test]
+    fn generate_composed_variants_selector_and_at_rule() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Static {
+            token: "flex".into(),
+            entries: CssEntries::new(vec![CssEntry::new("display", "flex")]),
+        });
+        config.variants.push(Variant::Selector {
+            name: "hover".into(),
+            template: "&:hover".into(),
+        });
+        config.variants.push(Variant::AtRule {
+            name: "sm".into(),
+            rule: "@media (min-width: 640px)".into(),
+        });
+        let compiled = compile(config);
+
+        let result = generate(&compiled, "hover:sm:flex").unwrap();
+        assert_eq!(
+            result,
+            "@media (min-width: 640px) { .hover\\:sm\\:flex:hover { display: flex; } }"
+        );
+    }
+
+    #[test]
+    fn generate_unknown_variant_falls_through_to_base_token() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Static {
+            token: "unknown:flex".into(),
+            entries: CssEntries::new(vec![CssEntry::new("display", "flex")]),
+        });
+        let compiled = compile(config);
+        assert_eq!(
+            generate(&compiled, "unknown:flex").unwrap(),
+            ".unknown\\:flex { display: flex; }"
+        );
+    }
+
+    #[test]
+    fn generate_unknown_variant_no_match() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Static {
+            token: "flex".into(),
+            entries: CssEntries::new(vec![CssEntry::new("display", "flex")]),
+        });
+        let compiled = compile(config);
+        assert!(generate(&compiled, "fake:flex").is_none());
+    }
+
+    #[test]
+    fn generate_multiple_entries() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Static {
+            token: "inset-0".into(),
+            entries: CssEntries::new(vec![
+                CssEntry::new("top", "0"),
+                CssEntry::new("right", "0"),
+                CssEntry::new("bottom", "0"),
+                CssEntry::new("left", "0"),
+            ]),
+        });
+        let compiled = compile(config);
+        assert_eq!(
+            generate(&compiled, "inset-0").unwrap(),
+            ".inset-0 { top: 0; right: 0; bottom: 0; left: 0; }"
+        );
+    }
+
+    #[test]
+    fn generate_pattern_with_only_capture_substitution() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Pattern {
+            pattern: r"^m-(\d+)$".into(),
+            template: CssEntries::new(vec![CssEntry::new("margin", "$1px")]),
+        });
+        let compiled = compile(config);
+        assert_eq!(generate(&compiled, "m-8").unwrap(), ".m-8 { margin: 8px; }");
+    }
+
+    #[test]
+    fn generate_dynamic_rule_returning_none() {
+        fn handler(_token: &str, _theme: &Theme) -> Option<CssEntries> {
+            None
+        }
+
+        let mut config = Config::new();
+        config.rules.push(Rule::Dynamic {
+            pattern: r"^fail-(.+)$".into(),
+            handler,
+        });
+        let compiled = compile(config);
+        assert!(generate(&compiled, "fail-something").is_none());
+    }
+
+    #[test]
+    fn generate_theme_lookup_failure_returns_none() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Pattern {
+            pattern: r"^bg-(.+)$".into(),
+            template: CssEntries::new(vec![CssEntry::new("background-color", "{theme.colors.$1}")]),
+        });
+        let compiled = compile(config);
+        assert!(generate(&compiled, "bg-missing").is_none());
+    }
+
+    #[test]
+    fn generate_static_rule_takes_priority_over_regex() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Static {
+            token: "p-4".into(),
+            entries: CssEntries::new(vec![CssEntry::new("padding", "1rem")]),
+        });
+        config.rules.push(Rule::Pattern {
+            pattern: r"^p-(\d+)$".into(),
+            template: CssEntries::new(vec![CssEntry::new("padding", "$1px")]),
+        });
+        let compiled = compile(config);
+        assert_eq!(
+            generate(&compiled, "p-4").unwrap(),
+            ".p-4 { padding: 1rem; }"
+        );
+    }
+
+    #[test]
+    fn generate_pattern_with_multiple_captures() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Pattern {
+            pattern: r"^p-(\d+)-(\d+)$".into(),
+            template: CssEntries::new(vec![CssEntry::new("padding", "$1rem $2rem")]),
+        });
+        let compiled = compile(config);
+        assert_eq!(
+            generate(&compiled, "p-2-4").unwrap(),
+            ".p-2-4 { padding: 2rem 4rem; }"
+        );
+    }
+
+    #[test]
+    fn generate_out_of_range_capture_returns_none() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Pattern {
+            pattern: r"^p-(\d+)$".into(),
+            template: CssEntries::new(vec![CssEntry::new("padding", "$1rem $3rem")]),
+        });
+        let compiled = compile(config);
+        assert!(generate(&compiled, "p-4").is_none());
+    }
+
+    #[test]
+    fn generate_variant_with_pattern_rule() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Pattern {
+            pattern: r"^p-(\d+)$".into(),
+            template: CssEntries::new(vec![CssEntry::new("padding", "$1rem")]),
+        });
+        config.variants.push(Variant::Selector {
+            name: "hover".into(),
+            template: "&:hover".into(),
+        });
+        let compiled = compile(config);
+        assert_eq!(
+            generate(&compiled, "hover:p-4").unwrap(),
+            ".hover\\:p-4:hover { padding: 4rem; }"
+        );
     }
 }

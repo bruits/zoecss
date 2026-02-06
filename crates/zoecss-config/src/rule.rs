@@ -2,8 +2,7 @@
 
 use std::borrow::Cow;
 
-use crate::entries::CssEntries;
-use crate::theme::Theme;
+use zoecss_core::{CssEntries, Theme};
 
 /// A rule that maps utility tokens to CSS declarations.
 ///
@@ -33,7 +32,7 @@ pub enum Rule {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::entries::CssEntry;
+    use zoecss_core::CssEntry;
 
     #[test]
     fn static_rule() {

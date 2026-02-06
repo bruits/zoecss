@@ -1,32 +1,14 @@
 # zoecss-config
 
-This crate provides the types that describe a [ZoeCSS](../../README.md) configuration and a two-phase
-pipeline to turn it into a query-ready runtime form:
+Configuration model, merging, and compilation for [ZoeCSS](../../README.md), with a three-phase pipeline:
 
 ```text
 Config (build) ──► Config (merge) ──► CompiledConfig (query)
 ```
 
 1. **Build** — assemble `Preset`s, user rules/variants/theme into a `Config`.
-2. **Merge** — `Config::merge()` flattens presets (first = lowest priority) then
-   applies user overrides on top. Theme is deep-merged per key; rules and variants
-   are concatenated in order.
-3. **Compile** — `CompiledConfig::compile(config)` produces an immutable, optimized
-   form: `HashMap` for O(1) static lookups, `RegexSet` for single-pass pattern
-   matching.
-
-## Types
-
-| Type                | Role                                                                        |
-| ------------------- | --------------------------------------------------------------------------- |
-| `Config`            | Top-level configuration: presets + user overrides                           |
-| `Preset`            | Reusable bundle of rules, variants, and theme values                        |
-| `Rule`              | Maps a utility token to CSS — `Static`, `Pattern`, or `Dynamic`             |
-| `Variant`           | Output modifier — `Selector` (e.g. `&:hover`) or `AtRule` (e.g. `@media …`) |
-| `Theme`             | Two-level `section → key → value` store for design tokens                   |
-| `CssEntries`        | Ordered list of `CssEntry` property/value pairs                             |
-| `CompiledConfig`    | Immutable runtime form, built once, queried many times                      |
-| `CompiledRegexRule` | A compiled regex rule ready for capture extraction                          |
+2. **Merge** — `Config::merge()` flattens presets (first = lowest priority) then applies user overrides on top. Theme is deep-merged per key; rules and variants are concatenated in order.
+1. **Compile** — `CompiledConfig::compile(config)` produces an immutable, optimized form: `HashMap` for O(1) static lookups, `RegexSet` for single-pass pattern matching.
 
 ## Rule kinds
 
@@ -56,3 +38,13 @@ Rule::Dynamic {
     handler: |token, theme| { /* … */ },
 }
 ```
+
+## Types
+
+| Type                | Role                                                         |
+| ------------------- | ------------------------------------------------------------ |
+| `Config`            | Top-level configuration: presets + user overrides            |
+| `Preset`            | Reusable bundle of rules, variants, and theme values         |
+| `Rule`              | Maps a utility token to CSS — `Static`, `Pattern`, `Dynamic` |
+| `CompiledConfig`    | Immutable runtime form implementing `CssEngine`              |
+| `CompiledRegexRule` | A compiled regex rule ready for capture extraction           |
