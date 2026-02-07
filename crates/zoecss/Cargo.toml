@@ -9,3 +9,10 @@ repository.workspace = true
 [[bin]]
 name = "zoecss"
 path = "src/main.rs"
+
+[dependencies]
+zoecss-core = { path = "../zoecss-core" }
+zoecss-config = { path = "../zoecss-config" }
+zoecss-presets = { path = "../zoecss-presets" }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"

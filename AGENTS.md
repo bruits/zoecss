@@ -16,7 +16,11 @@ Principles for how automated agents and contributors generate code and docs here
 
 ## Errors
 
-TODO
+- Typed error enums in library crates (`error.rs`), derived with `thiserror`.
+- `anyhow` in the binary crate only, for CLI-level error propagation with context.
+- Per-crate `pub type Result<T>` aliases for ergonomic signatures.
+- Prefer `?` propagation over `.expect()` / `.unwrap()` in production code. Reserve `.expect()` for cases where failure is a programmer bug (e.g. hardcoded regex literals, test helpers).
+- Add context at the boundary (CLI) rather than deep in core, keep library error messages concise.
 
 ## Documentation
 
@@ -33,4 +37,4 @@ TODO
 ## Changes & Dependencies
 
 - Do not alter CI/CD configuration unless explicitly instructed.
-- Avoid introducing external dependencies; add only with strong justification and prior discussion. Prefer the standard library and existing utilities.
+- Only add external dependencies with strong justification and prior discussion. Prefer the standard library and existing utilities.

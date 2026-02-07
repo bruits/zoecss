@@ -44,7 +44,11 @@ pub struct CompiledConfig {
 
 impl CompiledConfig {
     /// Compiles a merged [`Config`] into an optimized runtime form.
-    pub fn compile(config: Config) -> Self {
+    ///
+    /// Returns an error if any rule contains an invalid regex pattern.
+    pub fn compile(config: Config) -> crate::error::Result<Self> {
+        use crate::error::ConfigError;
+
         let mut static_rules = FxHashMap::default();
         let mut patterns: Vec<Cow<'static, str>> = Vec::new();
         let mut regex_rules = Vec::new();
@@ -55,19 +59,32 @@ impl CompiledConfig {
                     static_rules.insert(token, entries);
                 }
                 Rule::Pattern { pattern, template } => {
-                    let regex = Regex::new(&pattern).expect("invalid pattern regex");
+                    let regex = Regex::new(&pattern).map_err(|e| ConfigError::InvalidRegex {
+                        pattern: pattern.to_string(),
+                        message: e.to_string(),
+                    })?;
                     patterns.push(pattern);
                     regex_rules.push(CompiledRegexRule::Pattern { regex, template });
                 }
                 Rule::Dynamic { pattern, handler } => {
-                    let regex = Regex::new(&pattern).expect("invalid dynamic regex");
+                    let regex = Regex::new(&pattern).map_err(|e| ConfigError::InvalidRegex {
+                        pattern: pattern.to_string(),
+                        message: e.to_string(),
+                    })?;
                     patterns.push(pattern);
                     regex_rules.push(CompiledRegexRule::Dynamic { regex, handler });
                 }
             }
         }
 
-        let regex_set = RegexSet::new(&patterns).expect("invalid regex set");
+        let regex_set = RegexSet::new(&patterns).map_err(|e| ConfigError::InvalidRegex {
+            pattern: patterns
+                .iter()
+                .map(|p| p.as_ref())
+                .collect::<Vec<_>>()
+                .join(", "),
+            message: e.to_string(),
+        })?;
 
         let mut variants = FxHashMap::default();
         for variant in config.variants {
@@ -77,13 +94,13 @@ impl CompiledConfig {
             variants.insert(name, variant);
         }
 
-        Self {
+        Ok(Self {
             static_rules,
             regex_set,
             regex_rules,
             variants,
             theme: config.theme,
-        }
+        })
     }
 
     /// O(1) lookup for a static rule by exact token.
@@ -212,7 +229,7 @@ mod tests {
 
     #[test]
     fn compile_empty_config() {
-        let compiled = CompiledConfig::compile(Config::new());
+        let compiled = CompiledConfig::compile(Config::new()).expect("valid test config");
         assert!(compiled.get_static("anything").is_none());
         assert!(compiled.match_regex("anything").is_empty());
         assert!(compiled.get_variant("hover").is_none());
@@ -227,7 +244,7 @@ mod tests {
             entries: CssEntries::new(vec![CssEntry::new("display", "flex")]),
         });
 
-        let compiled = CompiledConfig::compile(config);
+        let compiled = CompiledConfig::compile(config).expect("valid test config");
         let entries = compiled.get_static("flex").expect("should find 'flex'");
         assert_eq!(entries.len(), 1);
         assert_eq!(entries.0[0].property, "display");
@@ -242,7 +259,7 @@ mod tests {
             entries: CssEntries::new(vec![CssEntry::new("display", "flex")]),
         });
 
-        let compiled = CompiledConfig::compile(config);
+        let compiled = CompiledConfig::compile(config).expect("valid test config");
         assert!(compiled.get_static("block").is_none());
     }
 
@@ -254,7 +271,7 @@ mod tests {
             template: CssEntries::new(vec![CssEntry::new("padding", "$1rem")]),
         });
 
-        let compiled = CompiledConfig::compile(config);
+        let compiled = CompiledConfig::compile(config).expect("valid test config");
         let matches = compiled.match_regex("p-4");
         assert_eq!(matches.len(), 1);
         match &matches[0] {
@@ -278,7 +295,7 @@ mod tests {
             handler,
         });
 
-        let compiled = CompiledConfig::compile(config);
+        let compiled = CompiledConfig::compile(config).expect("valid test config");
         let matches = compiled.match_regex("text-red");
         assert_eq!(matches.len(), 1);
         match &matches[0] {
@@ -299,7 +316,7 @@ mod tests {
             template: "&:hover".into(),
         });
 
-        let compiled = CompiledConfig::compile(config);
+        let compiled = CompiledConfig::compile(config).expect("valid test config");
         let variant = compiled.get_variant("hover").expect("should find 'hover'");
         assert_eq!(
             variant,
@@ -312,7 +329,7 @@ mod tests {
 
     #[test]
     fn compile_variant_miss() {
-        let compiled = CompiledConfig::compile(Config::new());
+        let compiled = CompiledConfig::compile(Config::new()).expect("valid test config");
         assert!(compiled.get_variant("hover").is_none());
     }
 
@@ -341,7 +358,7 @@ mod tests {
         });
         config.theme.insert("colors", "red", "#ef4444");
 
-        let compiled = CompiledConfig::compile(config);
+        let compiled = CompiledConfig::compile(config).expect("valid test config");
 
         assert!(compiled.get_static("flex").is_some());
         assert!(compiled.get_static("p-4").is_none());
@@ -366,7 +383,7 @@ mod tests {
             template: CssEntries::new(vec![CssEntry::new("padding", "match-2")]),
         });
 
-        let compiled = CompiledConfig::compile(config);
+        let compiled = CompiledConfig::compile(config).expect("valid test config");
         let matches = compiled.match_regex("p-4");
         assert_eq!(matches.len(), 2);
 
@@ -387,7 +404,7 @@ mod tests {
     // --- generate() integration tests ---
 
     fn compile(config: Config) -> CompiledConfig {
-        CompiledConfig::compile(config.merge())
+        CompiledConfig::compile(config.merge()).expect("valid test config")
     }
 
     #[test]
@@ -657,5 +674,20 @@ mod tests {
             generate(&compiled, "hover:p-4").unwrap(),
             ".hover\\:p-4:hover { padding: 4rem; }"
         );
+    }
+
+    #[test]
+    fn compile_invalid_regex_returns_error() {
+        let mut config = Config::new();
+        config.rules.push(Rule::Pattern {
+            pattern: r"^p-[invalid".into(),
+            template: CssEntries::new(vec![CssEntry::new("padding", "$1rem")]),
+        });
+
+        let result = CompiledConfig::compile(config);
+        assert!(result.is_err());
+
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("p-[invalid"));
     }
 }

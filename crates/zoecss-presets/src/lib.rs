@@ -87,7 +87,7 @@ mod tests {
     fn compile_base() -> CompiledConfig {
         let mut config = Config::new();
         config.presets.push(base());
-        CompiledConfig::compile(config.merge())
+        CompiledConfig::compile(config.merge()).expect("base preset compiles")
     }
 
     #[test]

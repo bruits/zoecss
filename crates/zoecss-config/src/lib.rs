@@ -6,6 +6,7 @@
 
 pub mod compiled;
 pub mod config;
+pub mod error;
 pub mod preset;
 pub mod rule;
 
@@ -14,5 +15,6 @@ pub use zoecss_core::{CssEngine, CssEntries, CssEntry, Theme, Variant};
 
 pub use compiled::{CompiledConfig, CompiledRegexRule};
 pub use config::Config;
+pub use error::{ConfigError, Result as ConfigResult};
 pub use preset::Preset;
 pub use rule::Rule;
