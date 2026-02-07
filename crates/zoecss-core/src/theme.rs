@@ -1,7 +1,8 @@
 //! Theme values organized in two-level sections.
 
 use std::borrow::Cow;
-use std::collections::HashMap;
+
+use rustc_hash::FxHashMap;
 
 /// Theme values organized in two-level sections.
 ///
@@ -9,13 +10,13 @@ use std::collections::HashMap;
 /// Values use `Cow<'static, str>` for zero-copy preset defaults.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Theme {
-    pub sections: HashMap<Cow<'static, str>, HashMap<Cow<'static, str>, Cow<'static, str>>>,
+    pub sections: FxHashMap<Cow<'static, str>, FxHashMap<Cow<'static, str>, Cow<'static, str>>>,
 }
 
 impl Theme {
     pub fn new() -> Self {
         Self {
-            sections: HashMap::new(),
+            sections: FxHashMap::default(),
         }
     }
 

@@ -4,7 +4,7 @@
 //! JSX, Vue, Svelte, or any textual source by splitting on delimiter characters
 //! and keeping sequences that look like plausible CSS utility tokens.
 
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 /// Characters that may appear inside a utility token.
 fn is_token_char(ch: char) -> bool {
@@ -22,7 +22,7 @@ fn is_token_char(ch: char) -> bool {
 /// contain at least one ASCII letter to filter out pure numbers and
 /// punctuation. Results are deduplicated in first-occurrence order.
 pub fn extract_tokens(content: &str) -> Vec<&str> {
-    let mut seen = HashSet::new();
+    let mut seen = FxHashSet::default();
     let mut tokens: Vec<&str> = Vec::new();
 
     let bytes = content.as_bytes();
@@ -42,9 +42,7 @@ pub fn extract_tokens(content: &str) -> Vec<&str> {
                 } else if ch == ']' && bracket_depth > 0 {
                     bracket_depth -= 1;
                     i += 1;
-                } else if bracket_depth > 0 && !ch.is_ascii_whitespace() {
-                    i += 1;
-                } else if is_token_char(ch) {
+                } else if (bracket_depth > 0 && !ch.is_ascii_whitespace()) || is_token_char(ch) {
                     i += 1;
                 } else {
                     break;

@@ -1,11 +1,12 @@
 //! Compiled configuration optimized for fast token matching.
 //!
 //! Built once from a merged [`Config`], then queried immutably. Static rules use
-//! O(1) `HashMap` lookup; pattern and dynamic rules share a single-pass `RegexSet`
+//! O(1) hash-map lookup; pattern and dynamic rules share a single-pass `RegexSet`
 //! DFA with a parallel `Vec` for capture extraction on match.
 
 use std::borrow::Cow;
-use std::collections::HashMap;
+
+use rustc_hash::FxHashMap;
 
 use regex::Regex;
 use regex::RegexSet;
@@ -29,22 +30,22 @@ pub enum CompiledRegexRule {
 
 /// Compiled configuration optimized for fast token matching.
 ///
-/// Static rules live in a `HashMap` for O(1) exact-match lookup.
+/// Static rules live in an `FxHashMap` for O(1) exact-match lookup.
 /// Pattern and dynamic rules are indexed by a `RegexSet` for single-pass DFA matching,
 /// backed by a parallel `Vec<CompiledRegexRule>` for per-match capture extraction.
 #[derive(Debug, Clone)]
 pub struct CompiledConfig {
-    static_rules: HashMap<Cow<'static, str>, CssEntries>,
+    static_rules: FxHashMap<Cow<'static, str>, CssEntries>,
     regex_set: RegexSet,
     regex_rules: Vec<CompiledRegexRule>,
-    variants: HashMap<Cow<'static, str>, Variant>,
+    variants: FxHashMap<Cow<'static, str>, Variant>,
     theme: Theme,
 }
 
 impl CompiledConfig {
     /// Compiles a merged [`Config`] into an optimized runtime form.
     pub fn compile(config: Config) -> Self {
-        let mut static_rules = HashMap::new();
+        let mut static_rules = FxHashMap::default();
         let mut patterns: Vec<Cow<'static, str>> = Vec::new();
         let mut regex_rules = Vec::new();
 
@@ -68,7 +69,7 @@ impl CompiledConfig {
 
         let regex_set = RegexSet::new(&patterns).expect("invalid regex set");
 
-        let mut variants = HashMap::new();
+        let mut variants = FxHashMap::default();
         for variant in config.variants {
             let name = match &variant {
                 Variant::Selector { name, .. } | Variant::AtRule { name, .. } => name.clone(),

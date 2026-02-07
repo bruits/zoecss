@@ -9,5 +9,6 @@ repository.workspace = true
 [dependencies]
 zoecss-core = { path = "../zoecss-core" }
 regex = "1"
+rustc-hash = "2"
 
 [lib]
