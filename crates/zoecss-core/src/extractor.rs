@@ -6,14 +6,22 @@
 
 use rustc_hash::FxHashSet;
 
-/// Characters that may appear inside a utility token.
-fn is_token_char(ch: char) -> bool {
-    ch.is_ascii_alphanumeric()
-        || matches!(
-            ch,
-            '-' | '_' | ':' | '/' | '.' | '[' | ']' | '#' | '%' | '!' | '@' | ','
-        )
-}
+/// Precomputed lookup: `true` for bytes that may appear inside a utility token.
+/// Replaces the branch-heavy `is_token_char` function with a single table
+/// lookup, enabling bulk delimiter skipping.
+const IS_TOKEN_BYTE: [bool; 256] = {
+    let mut table = [false; 256];
+    let mut i = 0u16;
+    while i < 256 {
+        let b = i as u8;
+        table[i as usize] = b.is_ascii_alphanumeric() || matches!(
+            b,
+            b'-' | b'_' | b':' | b'/' | b'.' | b'[' | b']' | b'#' | b'%' | b'!' | b'@' | b','
+        );
+        i += 1;
+    }
+    table
+};
 
 /// Scans `content` for plausible CSS utility tokens.
 ///
@@ -30,19 +38,20 @@ pub fn extract_tokens(content: &str) -> Vec<&str> {
     let mut i = 0;
 
     while i < len {
-        // All token characters are ASCII, so byte-level scanning is safe.
-        if is_token_char(bytes[i] as char) {
+        if IS_TOKEN_BYTE[bytes[i] as usize] {
             let start = i;
             let mut bracket_depth: u32 = 0;
             while i < len {
-                let ch = bytes[i] as char;
-                if ch == '[' {
+                let b = bytes[i];
+                if b == b'[' {
                     bracket_depth += 1;
                     i += 1;
-                } else if ch == ']' && bracket_depth > 0 {
+                } else if b == b']' && bracket_depth > 0 {
                     bracket_depth -= 1;
                     i += 1;
-                } else if (bracket_depth > 0 && !ch.is_ascii_whitespace()) || is_token_char(ch) {
+                } else if (bracket_depth > 0 && !b.is_ascii_whitespace())
+                    || IS_TOKEN_BYTE[b as usize]
+                {
                     i += 1;
                 } else {
                     break;
@@ -54,7 +63,12 @@ pub fn extract_tokens(content: &str) -> Vec<&str> {
                 tokens.push(candidate);
             }
         } else {
-            i += 1;
+            // Skip delimiter bytes in bulk.
+            if let Some(offset) = bytes[i..].iter().position(|&b| IS_TOKEN_BYTE[b as usize]) {
+                i += offset;
+            } else {
+                break;
+            }
         }
     }
 
