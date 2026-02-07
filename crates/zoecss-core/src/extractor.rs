@@ -1,26 +1,27 @@
 //! Token extraction — scans source files for utility class candidates.
-//!
-//! The `extract_tokens` function is content-type-agnostic: it works on HTML,
-//! JSX, Vue, Svelte, or any textual source by splitting on delimiter characters
-//! and keeping sequences that look like plausible CSS utility tokens.
 
 use rustc_hash::FxHashSet;
 
-/// Characters that may appear inside a utility token.
-fn is_token_char(ch: char) -> bool {
-    ch.is_ascii_alphanumeric()
-        || matches!(
-            ch,
-            '-' | '_' | ':' | '/' | '.' | '[' | ']' | '#' | '%' | '!' | '@' | ','
-        )
-}
+/// `true` for bytes that may appear inside a utility token.
+const IS_TOKEN_BYTE: [bool; 256] = {
+    let mut table = [false; 256];
+    let mut i = 0u16;
+    while i < 256 {
+        let b = i as u8;
+        table[i as usize] = b.is_ascii_alphanumeric()
+            || matches!(
+                b,
+                b'-' | b'_' | b':' | b'/' | b'.' | b'[' | b']' | b'#' | b'%' | b'!' | b'@' | b','
+            );
+        i += 1;
+    }
+    table
+};
 
 /// Scans `content` for plausible CSS utility tokens.
 ///
-/// Iterates character-by-character, collecting maximal sequences of "token
-/// characters" (alphanumerics plus `-_:/.[]#%!@,`). Each candidate must
-/// contain at least one ASCII letter to filter out pure numbers and
-/// punctuation. Results are deduplicated in first-occurrence order.
+/// Content-type-agnostic (HTML, JSX, Vue, Svelte…). Candidates must contain
+/// at least one ASCII letter. Results are deduplicated in first-occurrence order.
 pub fn extract_tokens(content: &str) -> Vec<&str> {
     let mut seen = FxHashSet::default();
     let mut tokens: Vec<&str> = Vec::new();
@@ -30,19 +31,20 @@ pub fn extract_tokens(content: &str) -> Vec<&str> {
     let mut i = 0;
 
     while i < len {
-        // All token characters are ASCII, so byte-level scanning is safe.
-        if is_token_char(bytes[i] as char) {
+        if IS_TOKEN_BYTE[bytes[i] as usize] {
             let start = i;
             let mut bracket_depth: u32 = 0;
             while i < len {
-                let ch = bytes[i] as char;
-                if ch == '[' {
+                let b = bytes[i];
+                if b == b'[' {
                     bracket_depth += 1;
                     i += 1;
-                } else if ch == ']' && bracket_depth > 0 {
+                } else if b == b']' && bracket_depth > 0 {
                     bracket_depth -= 1;
                     i += 1;
-                } else if (bracket_depth > 0 && !ch.is_ascii_whitespace()) || is_token_char(ch) {
+                } else if (bracket_depth > 0 && !b.is_ascii_whitespace())
+                    || IS_TOKEN_BYTE[b as usize]
+                {
                     i += 1;
                 } else {
                     break;
@@ -53,8 +55,10 @@ pub fn extract_tokens(content: &str) -> Vec<&str> {
             if has_letter && seen.insert(candidate) {
                 tokens.push(candidate);
             }
+        } else if let Some(offset) = bytes[i..].iter().position(|&b| IS_TOKEN_BYTE[b as usize]) {
+            i += offset;
         } else {
-            i += 1;
+            break;
         }
     }
 
