@@ -14,10 +14,11 @@ const IS_TOKEN_BYTE: [bool; 256] = {
     let mut i = 0u16;
     while i < 256 {
         let b = i as u8;
-        table[i as usize] = b.is_ascii_alphanumeric() || matches!(
-            b,
-            b'-' | b'_' | b':' | b'/' | b'.' | b'[' | b']' | b'#' | b'%' | b'!' | b'@' | b','
-        );
+        table[i as usize] = b.is_ascii_alphanumeric()
+            || matches!(
+                b,
+                b'-' | b'_' | b':' | b'/' | b'.' | b'[' | b']' | b'#' | b'%' | b'!' | b'@' | b','
+            );
         i += 1;
     }
     table
