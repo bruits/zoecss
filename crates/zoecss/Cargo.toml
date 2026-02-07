@@ -16,3 +16,10 @@ zoecss-config = { path = "../zoecss-config" }
 zoecss-presets = { path = "../zoecss-presets" }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
+
+[dev-dependencies]
+codspeed-criterion-compat = "2"
+
+[[bench]]
+name = "pipeline"
+harness = false
