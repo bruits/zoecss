@@ -7,11 +7,13 @@
 
 pub mod engine;
 pub mod entries;
+pub mod extractor;
 pub mod theme;
 pub mod variant;
 
 pub use engine::CssEngine;
 pub use entries::{CssEntries, CssEntry};
+pub use extractor::extract_tokens;
 pub use theme::Theme;
 pub use variant::Variant;
 

@@ -14,6 +14,17 @@ zoecss_core::generate(&engine, "hover:flex");
 It is generic over `CssEngine`, a trait that any configuration backend can implement.
 `zoecss-config` provides `CompiledConfig`, the default implementation.
 
+## Extraction
+
+The `extract_tokens` function scans source file content for plausible utility tokens:
+
+```rust
+zoecss_core::extract_tokens(r#"<div class="flex p-4 hover:text-[#fff]">"#);
+// → vec!["flex", "p-4", "hover:text-[#fff]"]
+```
+
+It is content-type-agnostic (HTML, JSX, Vue…), returns deduplicated candidates in first-occurrence order.
+
 ## Types
 
 | Type         | Role                                                                        |
