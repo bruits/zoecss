@@ -1,14 +1,8 @@
 //! Token extraction — scans source files for utility class candidates.
-//!
-//! The `extract_tokens` function is content-type-agnostic: it works on HTML,
-//! JSX, Vue, Svelte, or any textual source by splitting on delimiter characters
-//! and keeping sequences that look like plausible CSS utility tokens.
 
 use rustc_hash::FxHashSet;
 
-/// Precomputed lookup: `true` for bytes that may appear inside a utility token.
-/// Replaces the branch-heavy `is_token_char` function with a single table
-/// lookup, enabling bulk delimiter skipping.
+/// `true` for bytes that may appear inside a utility token.
 const IS_TOKEN_BYTE: [bool; 256] = {
     let mut table = [false; 256];
     let mut i = 0u16;
@@ -26,10 +20,8 @@ const IS_TOKEN_BYTE: [bool; 256] = {
 
 /// Scans `content` for plausible CSS utility tokens.
 ///
-/// Iterates character-by-character, collecting maximal sequences of "token
-/// characters" (alphanumerics plus `-_:/.[]#%!@,`). Each candidate must
-/// contain at least one ASCII letter to filter out pure numbers and
-/// punctuation. Results are deduplicated in first-occurrence order.
+/// Content-type-agnostic (HTML, JSX, Vue, Svelte…). Candidates must contain
+/// at least one ASCII letter. Results are deduplicated in first-occurrence order.
 pub fn extract_tokens(content: &str) -> Vec<&str> {
     let mut seen = FxHashSet::default();
     let mut tokens: Vec<&str> = Vec::new();
@@ -63,13 +55,10 @@ pub fn extract_tokens(content: &str) -> Vec<&str> {
             if has_letter && seen.insert(candidate) {
                 tokens.push(candidate);
             }
+        } else if let Some(offset) = bytes[i..].iter().position(|&b| IS_TOKEN_BYTE[b as usize]) {
+            i += offset;
         } else {
-            // Skip delimiter bytes in bulk.
-            if let Some(offset) = bytes[i..].iter().position(|&b| IS_TOKEN_BYTE[b as usize]) {
-                i += offset;
-            } else {
-                break;
-            }
+            break;
         }
     }
 
