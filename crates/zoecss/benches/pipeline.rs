@@ -1,7 +1,10 @@
+use std::collections::HashSet;
+use std::fs;
+
 use codspeed_criterion_compat::{Criterion, black_box, criterion_group, criterion_main};
 
 use zoecss_config::{CompiledConfig, Config};
-use zoecss_core::generate;
+use zoecss_core::{extract_tokens, generate};
 use zoecss_presets::base;
 
 fn compile_base() -> CompiledConfig {
@@ -40,86 +43,54 @@ fn bench_generate_tokens(c: &mut Criterion) {
     }
 }
 
-fn bench_batch_generate(c: &mut Criterion) {
-    let compiled = compile_base();
+fn fixtures(name: &str) -> String {
+    let manifest = env!("CARGO_MANIFEST_DIR");
+    format!("{manifest}/../../fixtures/{name}")
+}
 
-    let tokens: Vec<&str> = vec![
-        // Static
-        "flex",
-        "block",
-        "inline",
-        "grid",
-        "hidden",
-        // Pattern — padding
-        "p-1",
-        "p-2",
-        "p-4",
-        "p-8",
-        // Pattern — margin
-        "m-1",
-        "m-2",
-        "m-4",
-        "m-8",
-        // Dynamic bracket syntax
-        "text-[#ff0000]",
-        "text-[rgb(0,0,0)]",
-        "text-[#3b82f6]",
-        // Selector variant
-        "hover:flex",
-        "hover:block",
-        "hover:p-4",
-        "hover:m-2",
-        // At-rule variants
-        "sm:flex",
-        "sm:block",
-        "sm:grid",
-        "sm:p-4",
-        "md:flex",
-        "md:grid",
-        "md:p-4",
-        // Composed variants
-        "sm:hover:flex",
-        "sm:hover:p-4",
-        "md:hover:flex",
-        "md:hover:block",
-        // Non-matching
-        "nonexistent",
-        "p-99",
-        "unknown-class",
-        "foo:flex",
-        // Duplicates for realistic throughput
-        "flex",
-        "block",
-        "grid",
-        "hidden",
-        "inline",
-        "p-1",
-        "p-2",
-        "p-4",
-        "p-8",
-        "m-1",
-        "m-2",
-        "m-4",
-        "m-8",
-        "text-[#ff0000]",
-        "text-[#3b82f6]",
-        "hover:flex",
-        "hover:block",
-        "sm:flex",
-        "sm:block",
-        "md:flex",
-        "md:grid",
-        "sm:hover:flex",
-        "md:hover:flex",
-        "nonexistent",
-        "unknown-class",
-    ];
+fn bench_extract_tokens(c: &mut Criterion) {
+    let mut group = c.benchmark_group("extract");
 
-    c.bench_function("batch generate", |b| {
+    let files = ["mixed.html", "no_matches.html"];
+    for name in files {
+        let content = fs::read_to_string(fixtures(name)).expect("fixture exists");
+        group.bench_function(name, |b| {
+            b.iter(|| black_box(extract_tokens(black_box(&content))));
+        });
+    }
+
+    let mixed = fs::read_to_string(fixtures("mixed.html")).expect("fixture exists");
+    let scaled = mixed.repeat(100);
+    group.bench_function("mixed.html x100", |b| {
+        b.iter(|| black_box(extract_tokens(black_box(&scaled))));
+    });
+
+    group.finish();
+}
+
+fn bench_full_pipeline(c: &mut Criterion) {
+    let content = fs::read_to_string(fixtures("mixed.html")).expect("fixture exists");
+
+    c.bench_function("full pipeline", |b| {
         b.iter(|| {
-            for &token in &tokens {
-                black_box(generate(&compiled, black_box(token)));
+            let mut seen = HashSet::new();
+            let mut tokens: Vec<String> = Vec::new();
+            for token in extract_tokens(&content) {
+                if seen.insert(token.to_owned()) {
+                    tokens.push(token.to_owned());
+                }
             }
+
+            let mut config = Config::new();
+            config.presets.push(base());
+            let compiled = CompiledConfig::compile(config.merge()).expect("base preset compiles");
+
+            let css: Vec<String> = tokens
+                .iter()
+                .filter_map(|token| generate(&compiled, token))
+                .collect();
+
+            black_box(css.join("\n"))
         });
     });
 }
@@ -128,6 +99,7 @@ criterion_group!(
     benches,
     bench_compile,
     bench_generate_tokens,
-    bench_batch_generate
+    bench_extract_tokens,
+    bench_full_pipeline
 );
 criterion_main!(benches);
