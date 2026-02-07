@@ -12,6 +12,7 @@ pub struct Config {
     pub rules: Vec<Rule>,
     pub variants: Vec<Variant>,
     pub theme: Theme,
+    pub base_css: Vec<String>,
 }
 
 impl Config {
@@ -21,6 +22,7 @@ impl Config {
             rules: Vec::new(),
             variants: Vec::new(),
             theme: Theme::new(),
+            base_css: Vec::new(),
         }
     }
 
@@ -33,10 +35,12 @@ impl Config {
         let mut rules = Vec::new();
         let mut variants = Vec::new();
         let mut theme = Theme::new();
+        let mut base_css = Vec::new();
 
         for preset in self.presets {
             rules.extend(preset.rules);
             variants.extend(preset.variants);
+            base_css.extend(preset.base_css);
             for (section, entries) in preset.theme.sections {
                 theme.sections.entry(section).or_default().extend(entries);
             }
@@ -44,6 +48,7 @@ impl Config {
 
         rules.extend(self.rules);
         variants.extend(self.variants);
+        base_css.extend(self.base_css);
         for (section, entries) in self.theme.sections {
             theme.sections.entry(section).or_default().extend(entries);
         }
@@ -53,6 +58,7 @@ impl Config {
             rules,
             variants,
             theme,
+            base_css,
         }
     }
 }
@@ -75,6 +81,7 @@ mod tests {
         assert!(config.rules.is_empty());
         assert!(config.variants.is_empty());
         assert!(config.theme.sections.is_empty());
+        assert!(config.base_css.is_empty());
     }
 
     #[test]
@@ -97,6 +104,7 @@ mod tests {
         assert!(config.rules.is_empty());
         assert!(config.variants.is_empty());
         assert!(config.theme.sections.is_empty());
+        assert!(config.base_css.is_empty());
     }
 
     #[test]
@@ -340,5 +348,46 @@ mod tests {
             }
         );
         assert_eq!(merged.theme.get("colors", "primary"), Some("#000"));
+    }
+
+    #[test]
+    fn merge_base_css_from_presets() {
+        let mut first = Preset::new("first");
+        first.base_css.push("/* reset */".into());
+
+        let mut second = Preset::new("second");
+        second.base_css.push("/* normalize */".into());
+
+        let mut config = Config::new();
+        config.presets = vec![first, second];
+        let merged = config.merge();
+
+        assert_eq!(merged.base_css, vec!["/* reset */", "/* normalize */"]);
+    }
+
+    #[test]
+    fn merge_base_css_user_after_presets() {
+        let mut preset = Preset::new("base");
+        preset.base_css.push("/* preset base */".into());
+
+        let mut config = Config::new();
+        config.presets.push(preset);
+        config.base_css.push("/* user base */".into());
+        let merged = config.merge();
+
+        assert_eq!(
+            merged.base_css,
+            vec!["/* preset base */", "/* user base */"]
+        );
+    }
+
+    #[test]
+    fn merge_base_css_empty_presets() {
+        let preset = Preset::new("empty");
+        let mut config = Config::new();
+        config.presets.push(preset);
+        let merged = config.merge();
+
+        assert!(merged.base_css.is_empty());
     }
 }

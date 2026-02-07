@@ -40,6 +40,7 @@ pub struct CompiledConfig {
     regex_rules: Vec<CompiledRegexRule>,
     variants: FxHashMap<Cow<'static, str>, Variant>,
     theme: Theme,
+    base_css: String,
 }
 
 impl CompiledConfig {
@@ -94,12 +95,22 @@ impl CompiledConfig {
             variants.insert(name, variant);
         }
 
+        let theme_props = config.theme.to_custom_properties();
+        let user_base = config.base_css.join("\n");
+        let base_css = match (user_base.is_empty(), theme_props.is_empty()) {
+            (true, true) => String::new(),
+            (true, false) => theme_props,
+            (false, true) => user_base,
+            (false, false) => format!("{user_base}\n{theme_props}"),
+        };
+
         Ok(Self {
             static_rules,
             regex_set,
             regex_rules,
             variants,
             theme: config.theme,
+            base_css,
         })
     }
 
@@ -154,6 +165,10 @@ impl CssEngine for CompiledConfig {
 
     fn get_variant(&self, name: &str) -> Option<&Variant> {
         self.variants.get(name)
+    }
+
+    fn base_css(&self) -> &str {
+        &self.base_css
     }
 }
 

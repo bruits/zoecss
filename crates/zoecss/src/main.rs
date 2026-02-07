@@ -9,7 +9,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 
 use zoecss_config::{CompiledConfig, Config};
-use zoecss_core::{extract_tokens, generate};
+use zoecss_core::{CssEngine, extract_tokens, generate};
 use zoecss_presets::base;
 
 #[derive(Parser)]
@@ -57,8 +57,21 @@ fn run(files: &[PathBuf]) -> Result<()> {
         .filter_map(|token| generate(&compiled, token))
         .collect();
 
+    print!("@layer base, utilities;\n\n");
+
+    let base = compiled.base_css();
+    if base.is_empty() {
+        print!("@layer base {{}}\n\n");
+    } else {
+        let indented: String = base.lines().map(|line| format!("  {line}\n")).collect();
+        print!("@layer base {{\n{indented}}}\n\n");
+    }
+
     if !css.is_empty() {
-        print!("{}", css.join("\n"));
+        let indented: String = css.iter().map(|rule| format!("  {rule}\n")).collect();
+        print!("@layer utilities {{\n{indented}}}");
+    } else {
+        print!("@layer utilities {{}}");
     }
 
     Ok(())

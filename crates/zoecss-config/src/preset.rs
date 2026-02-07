@@ -13,6 +13,7 @@ pub struct Preset {
     pub rules: Vec<Rule>,
     pub variants: Vec<Variant>,
     pub theme: Theme,
+    pub base_css: Vec<String>,
 }
 
 impl Preset {
@@ -22,6 +23,7 @@ impl Preset {
             rules: Vec::new(),
             variants: Vec::new(),
             theme: Theme::new(),
+            base_css: Vec::new(),
         }
     }
 }
@@ -44,6 +46,7 @@ mod tests {
         assert!(preset.rules.is_empty());
         assert!(preset.variants.is_empty());
         assert!(preset.theme.sections.is_empty());
+        assert!(preset.base_css.is_empty());
     }
 
     #[test]

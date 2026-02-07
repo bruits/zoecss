@@ -21,4 +21,7 @@ pub trait CssEngine {
 
     /// O(1) lookup for a variant by name.
     fn get_variant(&self, name: &str) -> Option<&Variant>;
+
+    /// Static CSS emitted before utility rules (e.g. reset, theme custom properties).
+    fn base_css(&self) -> &str;
 }
