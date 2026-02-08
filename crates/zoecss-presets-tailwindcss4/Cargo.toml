@@ -1,7 +1,7 @@
 [package]
-name = "zoecss-presets"
+name = "zoecss-preset-tailwindcss4"
 version = "0.1.0"
-description = "Composable config presets for ZoeCSS"
+description = "Tailwind CSS v4 preset for ZoeCSS"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true

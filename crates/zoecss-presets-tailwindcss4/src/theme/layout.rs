@@ -29,6 +29,7 @@ pub fn register(theme: &mut Theme) {
         theme.insert("container", key, value);
     }
 
+    theme.insert("aspect", "square", "1 / 1");
     theme.insert("aspect", "video", "16 / 9");
 }
 

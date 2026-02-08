@@ -8,12 +8,12 @@ An on-demand Atomic CSS engine (work in progress), with a strong focus on perfor
 
 ZoeCSS is a monorepo that contains the following crates (Rust packages):
 
-| Name             | Description                                     | Registry | README                                      |
-| ---------------- | ----------------------------------------------- | -------- | ------------------------------------------- |
-| `zoecss`         | CLI — scan, extract, cache, and output          | *WIP*    | [README](./crates/zoecss/README.md)         |
-| `zoecss-core`    | Core CSS generation engine (match tokens → CSS) | *WIP*    | [README](./crates/zoecss-core/README.md)    |
-| `zoecss-config`  | Configuration model, merging, and compilation   | *WIP*    | [README](./crates/zoecss-config/README.md)  |
-| `zoecss-presets` | Composable configuration presets                | *WIP*    | [README](./crates/zoecss-presets/README.md) |
+| Name                         | Description                                     | Registry | README                                                   |
+| ---------------------------- | ----------------------------------------------- | -------- | -------------------------------------------------------- |
+| `zoecss`                     | CLI — scan, extract, cache, and output          | *WIP*    | [README](./crates/zoecss/README.md)                      |
+| `zoecss-core`                | Core CSS generation engine (match tokens → CSS) | *WIP*    | [README](./crates/zoecss-core/README.md)                 |
+| `zoecss-config`              | Configuration model, merging, and compilation   | *WIP*    | [README](./crates/zoecss-config/README.md)               |
+| `zoecss-preset-tailwindcss4` | Tailwind CSS v4 preset                          | *WIP*    | [README](./crates/zoecss-presets-tailwindcss4/README.md) |
 
 ## Acknowledgements
 

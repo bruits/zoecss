@@ -3,7 +3,7 @@ resolver = "2"
 members = [
     "crates/zoecss-core",
     "crates/zoecss-config",
-    "crates/zoecss-presets",
+    "crates/zoecss-presets-tailwindcss4",
     "crates/zoecss",
 ]
 

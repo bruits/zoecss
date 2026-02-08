@@ -10,7 +10,7 @@ use clap::{Parser, ValueEnum};
 
 use zoecss_config::{CompiledConfig, Config};
 use zoecss_core::{CssEngine, extract_tokens, generate};
-use zoecss_presets::tailwindcss4;
+use zoecss_preset_tailwindcss4::tailwindcss4;
 
 #[derive(Clone, ValueEnum)]
 enum PresetChoice {

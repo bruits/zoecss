@@ -5,7 +5,7 @@ use codspeed_criterion_compat::{Criterion, black_box, criterion_group, criterion
 
 use zoecss_config::{CompiledConfig, Config};
 use zoecss_core::{extract_tokens, generate};
-use zoecss_presets::tailwindcss4;
+use zoecss_preset_tailwindcss4::tailwindcss4;
 
 fn compile_tailwindcss4() -> CompiledConfig {
     let mut config = Config::new();

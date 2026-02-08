@@ -416,8 +416,6 @@ mod tests {
         }
     }
 
-    // --- generate() integration tests ---
-
     fn compile(config: Config) -> CompiledConfig {
         CompiledConfig::compile(config.merge()).expect("valid test config")
     }

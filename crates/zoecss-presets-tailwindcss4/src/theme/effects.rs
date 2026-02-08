@@ -2,6 +2,7 @@ use zoecss_core::Theme;
 
 pub fn register(theme: &mut Theme) {
     for (key, value) in [
+        ("DEFAULT", "0.25rem"),
         ("xs", "0.125rem"),
         ("sm", "0.25rem"),
         ("md", "0.375rem"),
@@ -15,6 +16,11 @@ pub fn register(theme: &mut Theme) {
     }
 
     for (key, value) in [
+        (
+            "DEFAULT",
+            "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+        ),
+        ("inner", "inset 0 2px 4px 0 rgb(0 0 0 / 0.05)"),
         ("2xs", "0 1px rgb(0 0 0 / 0.05)"),
         ("xs", "0 1px 2px 0 rgb(0 0 0 / 0.05)"),
         (
@@ -47,6 +53,10 @@ pub fn register(theme: &mut Theme) {
     }
 
     for (key, value) in [
+        (
+            "DEFAULT",
+            "0 1px 2px rgb(0 0 0 / 0.1), 0 1px 1px rgb(0 0 0 / 0.06)",
+        ),
         ("xs", "0 1px 1px rgb(0 0 0 / 0.05)"),
         ("sm", "0 1px 2px rgb(0 0 0 / 0.15)"),
         ("md", "0 3px 3px rgb(0 0 0 / 0.12)"),
@@ -77,6 +87,7 @@ pub fn register(theme: &mut Theme) {
     }
 
     for (key, value) in [
+        ("DEFAULT", "8px"),
         ("xs", "4px"),
         ("sm", "8px"),
         ("md", "12px"),

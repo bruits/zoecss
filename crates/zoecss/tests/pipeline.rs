@@ -1,6 +1,6 @@
 use zoecss_config::{CompiledConfig, Config};
 use zoecss_core::{extract_tokens, generate};
-use zoecss_presets::tailwindcss4;
+use zoecss_preset_tailwindcss4::tailwindcss4;
 
 fn fixtures(name: &str) -> String {
     let manifest = env!("CARGO_MANIFEST_DIR");
