@@ -1,45 +1,18 @@
 //! Tailwind CSS compatible preset — rules, variants, theme, and preflight.
 
+mod rules;
 mod theme;
 
-use regex::Regex;
-use zoecss_config::{Preset, Rule};
-use zoecss_core::{CssEntries, CssEntry, Theme, Variant};
+use zoecss_config::Preset;
+use zoecss_core::Variant;
 
 /// Returns the Tailwind CSS compatible preset — a set of rules, variants,
 /// theme values, and a modern CSS reset (preflight) that mirrors Tailwind CSS v4.
 pub fn tailwindcss4() -> Preset {
     let mut preset = Preset::new("tailwindcss4");
 
-    // Static display utilities
-    for (token, value) in [
-        ("flex", "flex"),
-        ("block", "block"),
-        ("inline", "inline"),
-        ("grid", "grid"),
-        ("hidden", "none"),
-    ] {
-        preset.rules.push(Rule::Static {
-            token: token.into(),
-            entries: CssEntries::new(vec![CssEntry::new("display", value)]),
-        });
-    }
-
-    // Pattern rules — spacing with theme lookup
-    preset.rules.push(Rule::Pattern {
-        pattern: r"^p-(.+)$".into(),
-        template: CssEntries::new(vec![CssEntry::new("padding", "{theme.spacing.$1}")]),
-    });
-    preset.rules.push(Rule::Pattern {
-        pattern: r"^m-(.+)$".into(),
-        template: CssEntries::new(vec![CssEntry::new("margin", "{theme.spacing.$1}")]),
-    });
-
-    // Dynamic rule — arbitrary color via bracket syntax
-    preset.rules.push(Rule::Dynamic {
-        pattern: r"^text-\[(.+)\]$".into(),
-        handler: handle_arbitrary_color,
-    });
+    // Rules — static display utilities, spacing patterns, dynamic bracket syntax
+    rules::register_rules(&mut preset);
 
     // Variants
     preset.variants.push(Variant::Selector {
@@ -73,18 +46,6 @@ pub fn tailwindcss4() -> Preset {
     );
 
     preset
-}
-
-fn handle_arbitrary_color(token: &str, _theme: &Theme) -> Option<CssEntries> {
-    use std::sync::LazyLock;
-    static RE: LazyLock<Regex> =
-        LazyLock::new(|| Regex::new(r"^text-\[(.+)\]$").expect("valid regex"));
-    let caps = RE.captures(token)?;
-    let color = caps.get(1)?.as_str();
-    Some(CssEntries::new(vec![CssEntry::new(
-        "color",
-        color.to_owned(),
-    )]))
 }
 
 #[cfg(test)]

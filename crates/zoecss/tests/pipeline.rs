@@ -43,7 +43,13 @@ fn spacing_html_pattern_rules_with_dedup() {
 .p-1 { padding: 0.25rem; }\n\
 .m-2 { margin: 0.5rem; }\n\
 .p-4 { padding: 1rem; }\n\
-.m-8 { margin: 2rem; }";
+.m-8 { margin: 2rem; }\n\
+.px-4 { padding-left: 1rem; padding-right: 1rem; }\n\
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }\n\
+.pt-1 { padding-top: 0.25rem; }\n\
+.gap-2 { gap: 0.5rem; }\n\
+.mx-8 { margin-left: 2rem; margin-right: 2rem; }\n\
+.gap-x-4 { column-gap: 1rem; }";
     assert_eq!(output, expected);
 }
 
