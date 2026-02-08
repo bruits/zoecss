@@ -6,17 +6,17 @@ A preset is a reusable bundle of rules, variants, and theme values that can be p
 
 Each preset lives in its own submodule under `src/`, making it straightforward to add new ones alongside the existing ones.
 
-## Tailwind CSS preset
+## Tailwind CSS v4 preset
 
-`tailwindcss()` returns a Tailwind CSS compatible preset with utility rules, responsive variants, spacing/color theme values, and a modern CSS reset (preflight):
+`tailwindcss4()` returns a Tailwind CSS v4 compatible preset with utility rules, responsive variants, spacing/color theme values, and a modern CSS reset (preflight):
 
 ```rust
-use zoecss_presets::tailwindcss;
+use zoecss_presets::tailwindcss4;
 use zoecss_config::{Config, CompiledConfig};
 use zoecss_core::generate;
 
 let mut config = Config::new();
-config.presets.push(tailwindcss());
+config.presets.push(tailwindcss4());
 let engine = CompiledConfig::compile(config.merge());
 
 generate(&engine, "flex");          // → ".flex { display: flex; }"

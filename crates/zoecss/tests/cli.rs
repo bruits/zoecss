@@ -39,12 +39,16 @@ fn sample_html_produces_expected_css() {
         "spacing custom properties must be emitted"
     );
     assert!(
-        stdout.contains("--colors-red: #ef4444;"),
+        stdout.contains("--color-red-500:"),
         "color custom properties must be emitted"
     );
     assert!(
         stdout.contains("--default-font-family:"),
         "default font theme custom properties must be emitted"
+    );
+    assert!(
+        stdout.contains("@keyframes spin"),
+        "keyframes must be present in base layer"
     );
 
     let pos_base = stdout

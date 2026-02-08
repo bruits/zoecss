@@ -1,5 +1,5 @@
 //! Composable configuration presets (reusable config fragments).
 
-pub mod tailwindcss;
+pub mod tailwindcss4;
 
-pub use tailwindcss::tailwindcss;
+pub use tailwindcss4::tailwindcss4;

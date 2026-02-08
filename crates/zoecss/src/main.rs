@@ -10,11 +10,11 @@ use clap::{Parser, ValueEnum};
 
 use zoecss_config::{CompiledConfig, Config};
 use zoecss_core::{CssEngine, extract_tokens, generate};
-use zoecss_presets::tailwindcss;
+use zoecss_presets::tailwindcss4;
 
 #[derive(Clone, ValueEnum)]
 enum PresetChoice {
-    Tailwindcss,
+    Tailwindcss4,
     None,
 }
 
@@ -26,7 +26,7 @@ struct Cli {
     files: Vec<PathBuf>,
 
     /// Configuration preset to use
-    #[arg(long, value_enum, default_value_t = PresetChoice::Tailwindcss)]
+    #[arg(long, value_enum, default_value_t = PresetChoice::Tailwindcss4)]
     preset: PresetChoice,
 }
 
@@ -60,7 +60,7 @@ fn run(cli: &Cli) -> Result<()> {
     let mut config = Config::new();
 
     match cli.preset {
-        PresetChoice::Tailwindcss => config.presets.push(tailwindcss()),
+        PresetChoice::Tailwindcss4 => config.presets.push(tailwindcss4()),
         PresetChoice::None => {}
     }
 

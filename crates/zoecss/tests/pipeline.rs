@@ -1,6 +1,6 @@
 use zoecss_config::{CompiledConfig, Config};
 use zoecss_core::{extract_tokens, generate};
-use zoecss_presets::tailwindcss;
+use zoecss_presets::tailwindcss4;
 
 fn fixtures(name: &str) -> String {
     let manifest = env!("CARGO_MANIFEST_DIR");
@@ -14,8 +14,8 @@ fn run_pipeline(fixture_name: &str) -> String {
     let tokens = extract_tokens(&content);
 
     let mut config = Config::new();
-    config.presets.push(tailwindcss());
-    let compiled = CompiledConfig::compile(config.merge()).expect("tailwindcss preset compiles");
+    config.presets.push(tailwindcss4());
+    let compiled = CompiledConfig::compile(config.merge()).expect("tailwindcss4 preset compiles");
 
     tokens
         .iter()
