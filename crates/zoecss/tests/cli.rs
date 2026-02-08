@@ -27,6 +27,10 @@ fn sample_html_produces_expected_css() {
         "base layer block must be present"
     );
     assert!(
+        stdout.contains("box-sizing: border-box"),
+        "preflight CSS reset must be present in base layer"
+    );
+    assert!(
         stdout.contains(":root {"),
         "theme :root block must be present"
     );
@@ -37,6 +41,10 @@ fn sample_html_produces_expected_css() {
     assert!(
         stdout.contains("--colors-red: #ef4444;"),
         "color custom properties must be emitted"
+    );
+    assert!(
+        stdout.contains("--default-font-family:"),
+        "default font theme custom properties must be emitted"
     );
 
     let pos_base = stdout
@@ -106,6 +114,10 @@ fn empty_file_produces_no_output() {
         "base layer block must be present"
     );
     assert!(
+        stdout.contains("box-sizing: border-box"),
+        "preflight CSS reset must be present even for empty input"
+    );
+    assert!(
         stdout.contains(":root {"),
         "theme :root block must be present"
     );
@@ -161,4 +173,58 @@ fn deduplication_across_files() {
 
     // "block" only in duplicate.html (hover:block in sample.html is a different token)
     assert!(stdout.contains(".block { display: block; }"));
+}
+
+#[test]
+fn preset_none_empty_file() {
+    let output = zoecss()
+        .arg("--preset")
+        .arg("none")
+        .arg(fixtures("empty.html"))
+        .output()
+        .expect("failed to run zoecss");
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("@layer base, utilities;"));
+    assert!(stdout.contains("@layer base {}"));
+    assert!(stdout.contains("@layer utilities {}"));
+}
+
+#[test]
+fn preset_none_sample_html() {
+    let output = zoecss()
+        .arg("--preset")
+        .arg("none")
+        .arg(fixtures("sample.html"))
+        .output()
+        .expect("failed to run zoecss");
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // No preset means no rules, so no utilities are generated
+    assert!(stdout.contains("@layer utilities {}"));
+    // No preset means no preflight or theme in the base layer
+    assert!(stdout.contains("@layer base {}"));
+    assert!(
+        !stdout.contains("box-sizing"),
+        "no preflight without a preset"
+    );
+    assert!(!stdout.contains(":root {"), "no theme without a preset");
+}
+
+#[test]
+fn unknown_preset_exits_with_error() {
+    let output = zoecss()
+        .arg("--preset")
+        .arg("bogus")
+        .arg(fixtures("empty.html"))
+        .output()
+        .expect("failed to run zoecss");
+
+    assert!(!output.status.success());
+    // clap exits with code 2 for invalid arguments
+    assert_eq!(output.status.code(), Some(2));
 }

@@ -6,11 +6,17 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use anyhow::{Context, Result};
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 
 use zoecss_config::{CompiledConfig, Config};
 use zoecss_core::{CssEngine, extract_tokens, generate};
-use zoecss_presets::base;
+use zoecss_presets::tailwindcss;
+
+#[derive(Clone, ValueEnum)]
+enum PresetChoice {
+    Tailwindcss,
+    None,
+}
 
 #[derive(Parser)]
 #[command(name = "zoecss", about = "Scan source files and generate CSS")]
@@ -18,12 +24,16 @@ struct Cli {
     /// Source files to scan for utility classes
     #[arg(required = true)]
     files: Vec<PathBuf>,
+
+    /// Configuration preset to use
+    #[arg(long, value_enum, default_value_t = PresetChoice::Tailwindcss)]
+    preset: PresetChoice,
 }
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
 
-    match run(&cli.files) {
+    match run(&cli) {
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {
             eprintln!("Error: {err:#}");
@@ -32,11 +42,11 @@ fn main() -> ExitCode {
     }
 }
 
-fn run(files: &[PathBuf]) -> Result<()> {
+fn run(cli: &Cli) -> Result<()> {
     let mut seen = HashSet::new();
     let mut tokens: Vec<String> = Vec::new();
 
-    for path in files {
+    for path in &cli.files {
         let content = fs::read_to_string(path)
             .with_context(|| format!("failed to read '{}'", path.display()))?;
 
@@ -48,7 +58,12 @@ fn run(files: &[PathBuf]) -> Result<()> {
     }
 
     let mut config = Config::new();
-    config.presets.push(base());
+
+    match cli.preset {
+        PresetChoice::Tailwindcss => config.presets.push(tailwindcss()),
+        PresetChoice::None => {}
+    }
+
     let compiled =
         CompiledConfig::compile(config.merge()).context("failed to compile configuration")?;
 

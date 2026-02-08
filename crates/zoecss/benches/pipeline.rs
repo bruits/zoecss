@@ -5,26 +5,26 @@ use codspeed_criterion_compat::{Criterion, black_box, criterion_group, criterion
 
 use zoecss_config::{CompiledConfig, Config};
 use zoecss_core::{extract_tokens, generate};
-use zoecss_presets::base;
+use zoecss_presets::tailwindcss;
 
-fn compile_base() -> CompiledConfig {
+fn compile_tailwindcss() -> CompiledConfig {
     let mut config = Config::new();
-    config.presets.push(base());
-    CompiledConfig::compile(config.merge()).expect("base preset compiles")
+    config.presets.push(tailwindcss());
+    CompiledConfig::compile(config.merge()).expect("tailwindcss preset compiles")
 }
 
 fn bench_compile(c: &mut Criterion) {
     c.bench_function("compile", |b| {
         b.iter(|| {
             let mut config = Config::new();
-            config.presets.push(base());
-            black_box(CompiledConfig::compile(config.merge()).expect("base preset compiles"))
+            config.presets.push(tailwindcss());
+            black_box(CompiledConfig::compile(config.merge()).expect("tailwindcss preset compiles"))
         });
     });
 }
 
 fn bench_generate_tokens(c: &mut Criterion) {
-    let compiled = compile_base();
+    let compiled = compile_tailwindcss();
 
     let tokens: &[(&str, &str)] = &[
         ("flex", "static"),
@@ -82,8 +82,8 @@ fn bench_full_pipeline(c: &mut Criterion) {
             }
 
             let mut config = Config::new();
-            config.presets.push(base());
-            let compiled = CompiledConfig::compile(config.merge()).expect("base preset compiles");
+            config.presets.push(tailwindcss());
+            let compiled = CompiledConfig::compile(config.merge()).expect("tailwindcss preset compiles");
 
             let css: Vec<String> = tokens
                 .iter()
