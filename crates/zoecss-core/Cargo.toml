@@ -1,6 +1,6 @@
 [package]
 name = "zoecss-core"
-version = "0.1.0"
+version = "0.0.1"
 description = "Core CSS generation engine for ZoeCSS"
 edition.workspace = true
 license.workspace = true
