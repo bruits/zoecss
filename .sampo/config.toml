@@ -1,0 +1,17 @@
+# Sampo configuration
+version = 1
+
+[github]
+# By default, Sampo tries to infer the repository from the git remote.
+# You can override or clarify it here if needed.
+# repository = "owner/repo"
+
+[changelog]
+# Options for release notes generation.
+# show_commit_hash = true (default)
+# show_acknowledgments = true (default)
+
+[packages]
+# Options for package discovery and filtering.
+# ignore_unpublished = false (default)
+# ignore = ["internal-*", "examples/*"]
