@@ -1,6 +1,6 @@
 [package]
 name = "zoecss"
-version = "0.0.1"
+version = "0.1.0"
 description = "CLI for ZoeCSS — scan, extract, cache, and output CSS"
 edition.workspace = true
 license.workspace = true
@@ -11,9 +11,9 @@ name = "zoecss"
 path = "src/main.rs"
 
 [dependencies]
-zoecss-core = { path = "../zoecss-core" }
-zoecss-config = { path = "../zoecss-config" }
-zoecss-preset-tailwindcss4 = { path = "../zoecss-presets-tailwindcss4" }
+zoecss-core = { path = "../zoecss-core" , version = "0.1.0" }
+zoecss-config = { path = "../zoecss-config" , version = "0.1.0" }
+zoecss-preset-tailwindcss4 = { path = "../zoecss-presets-tailwindcss4" , version = "0.1.0" }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 

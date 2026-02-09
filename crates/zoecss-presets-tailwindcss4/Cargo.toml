@@ -1,14 +1,14 @@
 [package]
 name = "zoecss-preset-tailwindcss4"
-version = "0.0.1"
+version = "0.1.0"
 description = "Tailwind CSS v4 preset for ZoeCSS"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
 [dependencies]
-zoecss-core = { path = "../zoecss-core" }
-zoecss-config = { path = "../zoecss-config" }
+zoecss-core = { path = "../zoecss-core" , version = "0.1.0" }
+zoecss-config = { path = "../zoecss-config" , version = "0.1.0" }
 regex = "1"
 
 [lib]
