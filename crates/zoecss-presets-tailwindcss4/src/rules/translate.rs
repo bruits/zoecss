@@ -3,18 +3,24 @@ use zoecss_core::{CssEntries, CssEntry};
 
 /// Registers translate utility rules consuming `{theme.spacing.$1}`.
 ///
-/// Uses the native CSS `translate` property (CSS Transforms Level 2).
+/// Uses CSS custom properties so axis-specific utilities compose correctly.
 pub fn register(preset: &mut Preset) {
-    // translate-x before shorthand
+    // translate-x
     preset.rules.push(Rule::Pattern {
         pattern: r"^translate-x-(.+)$".into(),
-        template: CssEntries::new(vec![CssEntry::new("translate", "{theme.spacing.$1} 0")]),
+        template: CssEntries::new(vec![
+            CssEntry::new("--tw-translate-x", "{theme.spacing.$1}"),
+            CssEntry::new("translate", "var(--tw-translate-x) var(--tw-translate-y)"),
+        ]),
     });
 
     // translate-y
     preset.rules.push(Rule::Pattern {
         pattern: r"^translate-y-(.+)$".into(),
-        template: CssEntries::new(vec![CssEntry::new("translate", "0 {theme.spacing.$1}")]),
+        template: CssEntries::new(vec![
+            CssEntry::new("--tw-translate-y", "{theme.spacing.$1}"),
+            CssEntry::new("translate", "var(--tw-translate-x) var(--tw-translate-y)"),
+        ]),
     });
 }
 
@@ -36,7 +42,7 @@ mod tests {
         let compiled = compile_tailwindcss4();
         assert_eq!(
             generate(&compiled, "translate-x-4"),
-            Some(".translate-x-4 { translate: 1rem 0; }".into())
+            Some(".translate-x-4 { --tw-translate-x: 1rem; translate: var(--tw-translate-x) var(--tw-translate-y); }".into())
         );
     }
 
@@ -45,7 +51,7 @@ mod tests {
         let compiled = compile_tailwindcss4();
         assert_eq!(
             generate(&compiled, "translate-y-2"),
-            Some(".translate-y-2 { translate: 0 0.5rem; }".into())
+            Some(".translate-y-2 { --tw-translate-y: 0.5rem; translate: var(--tw-translate-x) var(--tw-translate-y); }".into())
         );
     }
 

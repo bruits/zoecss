@@ -2,29 +2,38 @@ use zoecss_config::{Preset, Rule};
 use zoecss_core::{CssEntries, CssEntry};
 
 /// Registers scale utility rules (shorthand + per-axis).
+///
+/// Uses CSS custom properties so axis-specific utilities compose correctly.
 pub fn register(preset: &mut Preset) {
-    // Static `scale-none` first
     preset.rules.push(Rule::Static {
         token: "scale-none".into(),
         entries: CssEntries::new(vec![CssEntry::new("scale", "none")]),
     });
 
-    // scale-x before shorthand
     preset.rules.push(Rule::Pattern {
         pattern: r"^scale-x-(\d+)$".into(),
-        template: CssEntries::new(vec![CssEntry::new("scale", "$1% 1")]),
+        template: CssEntries::new(vec![
+            CssEntry::new("--tw-scale-x", "$1%"),
+            CssEntry::new("scale", "var(--tw-scale-x) var(--tw-scale-y)"),
+        ]),
     });
 
-    // scale-y before shorthand
     preset.rules.push(Rule::Pattern {
         pattern: r"^scale-y-(\d+)$".into(),
-        template: CssEntries::new(vec![CssEntry::new("scale", "1 $1%")]),
+        template: CssEntries::new(vec![
+            CssEntry::new("--tw-scale-y", "$1%"),
+            CssEntry::new("scale", "var(--tw-scale-x) var(--tw-scale-y)"),
+        ]),
     });
 
     // scale shorthand
     preset.rules.push(Rule::Pattern {
         pattern: r"^scale-(\d+)$".into(),
-        template: CssEntries::new(vec![CssEntry::new("scale", "$1%")]),
+        template: CssEntries::new(vec![
+            CssEntry::new("--tw-scale-x", "$1%"),
+            CssEntry::new("--tw-scale-y", "$1%"),
+            CssEntry::new("scale", "var(--tw-scale-x) var(--tw-scale-y)"),
+        ]),
     });
 }
 
@@ -55,7 +64,7 @@ mod tests {
         let compiled = compile_tailwindcss4();
         assert_eq!(
             generate(&compiled, "scale-75"),
-            Some(".scale-75 { scale: 75%; }".into())
+            Some(".scale-75 { --tw-scale-x: 75%; --tw-scale-y: 75%; scale: var(--tw-scale-x) var(--tw-scale-y); }".into())
         );
     }
 
@@ -64,7 +73,10 @@ mod tests {
         let compiled = compile_tailwindcss4();
         assert_eq!(
             generate(&compiled, "scale-x-50"),
-            Some(".scale-x-50 { scale: 50% 1; }".into())
+            Some(
+                ".scale-x-50 { --tw-scale-x: 50%; scale: var(--tw-scale-x) var(--tw-scale-y); }"
+                    .into()
+            )
         );
     }
 
@@ -73,7 +85,10 @@ mod tests {
         let compiled = compile_tailwindcss4();
         assert_eq!(
             generate(&compiled, "scale-y-125"),
-            Some(".scale-y-125 { scale: 1 125%; }".into())
+            Some(
+                ".scale-y-125 { --tw-scale-y: 125%; scale: var(--tw-scale-x) var(--tw-scale-y); }"
+                    .into()
+            )
         );
     }
 

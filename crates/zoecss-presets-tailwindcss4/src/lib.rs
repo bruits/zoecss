@@ -36,6 +36,16 @@ pub fn tailwindcss4() -> Preset {
         .base_css
         .push(include_str!("preflight.css").to_owned());
 
+    // Utility infrastructure — custom property defaults for composable utilities.
+    preset.base_css.push(
+        "*, ::after, ::before, ::backdrop, ::file-selector-button { \
+         --tw-translate-x: 0; --tw-translate-y: 0; \
+         --tw-scale-x: 1; --tw-scale-y: 1; \
+         --tw-border-spacing-x: 0; --tw-border-spacing-y: 0; \
+        }"
+        .to_owned(),
+    );
+
     preset.base_css.push(
         "\
 @keyframes spin { to { transform: rotate(360deg); } }
