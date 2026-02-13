@@ -1,10 +1,16 @@
-use zoecss_config::{Preset, Rule};
-use zoecss_core::{CssEntries, CssEntry};
+use zoecss_config::{CssEntries, CssEntry, Preset, Rule};
 
 /// Registers scale utility rules (shorthand + per-axis).
 ///
 /// Uses CSS custom properties so axis-specific utilities compose correctly.
 pub fn register(preset: &mut Preset) {
+    preset
+        .property_defaults
+        .push(CssEntry::new("--tw-scale-x", "1"));
+    preset
+        .property_defaults
+        .push(CssEntry::new("--tw-scale-y", "1"));
+
     preset.rules.push(Rule::Static {
         token: "scale-none".into(),
         entries: CssEntries::new(vec![CssEntry::new("scale", "none")]),

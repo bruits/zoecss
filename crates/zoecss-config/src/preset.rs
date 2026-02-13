@@ -4,6 +4,7 @@ use std::borrow::Cow;
 
 use zoecss_core::{Theme, Variant};
 
+use crate::CssEntry;
 use crate::rule::Rule;
 
 /// A composable configuration preset — a reusable bundle of rules, variants, and theme values.
@@ -14,6 +15,9 @@ pub struct Preset {
     pub variants: Vec<Variant>,
     pub theme: Theme,
     pub base_css: Vec<String>,
+    /// CSS custom property defaults for composable utilities (e.g. `--tw-translate-x: 0`).
+    /// Collected from utility modules and emitted as a universal selector block during compilation.
+    pub property_defaults: Vec<CssEntry>,
 }
 
 impl Preset {
@@ -24,6 +28,7 @@ impl Preset {
             variants: Vec::new(),
             theme: Theme::new(),
             base_css: Vec::new(),
+            property_defaults: Vec::new(),
         }
     }
 }
@@ -47,6 +52,7 @@ mod tests {
         assert!(preset.variants.is_empty());
         assert!(preset.theme.sections.is_empty());
         assert!(preset.base_css.is_empty());
+        assert!(preset.property_defaults.is_empty());
     }
 
     #[test]

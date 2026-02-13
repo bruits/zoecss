@@ -1,10 +1,16 @@
-use zoecss_config::{Preset, Rule};
-use zoecss_core::{CssEntries, CssEntry};
+use zoecss_config::{CssEntries, CssEntry, Preset, Rule};
 
 /// Registers border-spacing utility rules consuming `{theme.spacing.$1}`.
 ///
 /// Uses CSS custom properties so axis-specific utilities compose correctly.
 pub fn register(preset: &mut Preset) {
+    preset
+        .property_defaults
+        .push(CssEntry::new("--tw-border-spacing-x", "0"));
+    preset
+        .property_defaults
+        .push(CssEntry::new("--tw-border-spacing-y", "0"));
+
     // border-spacing-x — horizontal only
     preset.rules.push(Rule::Pattern {
         pattern: r"^border-spacing-x-(.+)$".into(),

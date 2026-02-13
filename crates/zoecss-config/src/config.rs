@@ -2,6 +2,7 @@
 
 use zoecss_core::{Theme, Variant};
 
+use crate::CssEntry;
 use crate::preset::Preset;
 use crate::rule::Rule;
 
@@ -13,6 +14,9 @@ pub struct Config {
     pub variants: Vec<Variant>,
     pub theme: Theme,
     pub base_css: Vec<String>,
+    /// CSS custom property defaults for composable utilities.
+    /// Merged from presets (in order) then user overrides, same as `base_css`.
+    pub property_defaults: Vec<CssEntry>,
 }
 
 impl Config {
@@ -23,6 +27,7 @@ impl Config {
             variants: Vec::new(),
             theme: Theme::new(),
             base_css: Vec::new(),
+            property_defaults: Vec::new(),
         }
     }
 
@@ -36,11 +41,13 @@ impl Config {
         let mut variants = Vec::new();
         let mut theme = Theme::new();
         let mut base_css = Vec::new();
+        let mut property_defaults = Vec::new();
 
         for preset in self.presets {
             rules.extend(preset.rules);
             variants.extend(preset.variants);
             base_css.extend(preset.base_css);
+            property_defaults.extend(preset.property_defaults);
             for (section, entries) in preset.theme.sections {
                 theme.sections.entry(section).or_default().extend(entries);
             }
@@ -49,6 +56,7 @@ impl Config {
         rules.extend(self.rules);
         variants.extend(self.variants);
         base_css.extend(self.base_css);
+        property_defaults.extend(self.property_defaults);
         for (section, entries) in self.theme.sections {
             theme.sections.entry(section).or_default().extend(entries);
         }
@@ -59,6 +67,7 @@ impl Config {
             variants,
             theme,
             base_css,
+            property_defaults,
         }
     }
 }
@@ -82,6 +91,7 @@ mod tests {
         assert!(config.variants.is_empty());
         assert!(config.theme.sections.is_empty());
         assert!(config.base_css.is_empty());
+        assert!(config.property_defaults.is_empty());
     }
 
     #[test]
@@ -105,6 +115,7 @@ mod tests {
         assert!(config.variants.is_empty());
         assert!(config.theme.sections.is_empty());
         assert!(config.base_css.is_empty());
+        assert!(config.property_defaults.is_empty());
     }
 
     #[test]
@@ -389,5 +400,54 @@ mod tests {
         let merged = config.merge();
 
         assert!(merged.base_css.is_empty());
+    }
+
+    #[test]
+    fn merge_property_defaults_from_presets() {
+        let mut first = Preset::new("first");
+        first
+            .property_defaults
+            .push(CssEntry::new("--tw-translate-x", "0"));
+
+        let mut second = Preset::new("second");
+        second
+            .property_defaults
+            .push(CssEntry::new("--tw-scale-x", "1"));
+
+        let mut config = Config::new();
+        config.presets = vec![first, second];
+        let merged = config.merge();
+
+        assert_eq!(
+            merged.property_defaults,
+            vec![
+                CssEntry::new("--tw-translate-x", "0"),
+                CssEntry::new("--tw-scale-x", "1"),
+            ]
+        );
+    }
+
+    #[test]
+    fn merge_property_defaults_user_after_presets() {
+        let mut preset = Preset::new("base");
+        preset
+            .property_defaults
+            .push(CssEntry::new("--tw-translate-x", "0"));
+
+        let mut config = Config::new();
+        config.presets.push(preset);
+        config
+            .property_defaults
+            .push(CssEntry::new("--tw-translate-x", "10px"));
+        let merged = config.merge();
+
+        // User override appears after preset — last-wins during compilation.
+        assert_eq!(
+            merged.property_defaults,
+            vec![
+                CssEntry::new("--tw-translate-x", "0"),
+                CssEntry::new("--tw-translate-x", "10px"),
+            ]
+        );
     }
 }

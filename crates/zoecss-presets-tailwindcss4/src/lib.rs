@@ -36,16 +36,6 @@ pub fn tailwindcss4() -> Preset {
         .base_css
         .push(include_str!("preflight.css").to_owned());
 
-    // Utility infrastructure — custom property defaults for composable utilities.
-    preset.base_css.push(
-        "*, ::after, ::before, ::backdrop, ::file-selector-button { \
-         --tw-translate-x: 0; --tw-translate-y: 0; \
-         --tw-scale-x: 1; --tw-scale-y: 1; \
-         --tw-border-spacing-x: 0; --tw-border-spacing-y: 0; \
-        }"
-        .to_owned(),
-    );
-
     preset.base_css.push(
         "\
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -62,7 +52,7 @@ pub fn tailwindcss4() -> Preset {
 mod tests {
     use super::*;
     use zoecss_config::{CompiledConfig, Config};
-    use zoecss_core::generate;
+    use zoecss_core::{CssEngine, generate};
 
     fn compile_tailwindcss4() -> CompiledConfig {
         let mut config = Config::new();
@@ -186,12 +176,46 @@ mod tests {
             "should contain box-sizing reset"
         );
         assert!(
-            css.contains("::after"),
-            "should contain universal selector reset"
-        );
-        assert!(
             css.contains("display: none !important"),
             "should contain hidden attribute reset"
+        );
+    }
+
+    #[test]
+    fn property_defaults_collected_from_utility_modules() {
+        let preset = tailwindcss4();
+        let has = |name: &str| preset.property_defaults.iter().any(|e| e.property == name);
+        assert!(has("--tw-translate-x"), "translate-x default");
+        assert!(has("--tw-translate-y"), "translate-y default");
+        assert!(has("--tw-scale-x"), "scale-x default");
+        assert!(has("--tw-scale-y"), "scale-y default");
+        assert!(has("--tw-border-spacing-x"), "border-spacing-x default");
+        assert!(has("--tw-border-spacing-y"), "border-spacing-y default");
+        assert!(has("--tw-shadow"), "shadow default");
+        assert!(has("--tw-shadow-colored"), "shadow-colored default");
+        assert!(has("--tw-inset-shadow"), "inset-shadow default");
+        assert!(
+            has("--tw-inset-shadow-colored"),
+            "inset-shadow-colored default"
+        );
+        assert!(has("--tw-drop-shadow"), "drop-shadow default");
+        assert!(
+            has("--tw-drop-shadow-colored"),
+            "drop-shadow-colored default"
+        );
+    }
+
+    #[test]
+    fn compiled_base_css_contains_property_defaults() {
+        let compiled = compile_tailwindcss4();
+        let base = compiled.base_css();
+        assert!(
+            base.contains("--tw-translate-x: 0"),
+            "compiled base_css should contain translate-x default"
+        );
+        assert!(
+            base.contains("*, ::after, ::before, ::backdrop, ::file-selector-button"),
+            "compiled base_css should contain universal selector"
         );
     }
 

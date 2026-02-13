@@ -97,12 +97,38 @@ impl CompiledConfig {
 
         let theme_props = config.theme.to_custom_properties();
         let user_base = config.base_css.join("\n");
-        let base_css = match (user_base.is_empty(), theme_props.is_empty()) {
-            (true, true) => String::new(),
-            (true, false) => theme_props,
-            (false, true) => user_base,
-            (false, false) => format!("{user_base}\n{theme_props}"),
+
+        // Deduplicate property defaults with last-wins semantics
+        let deduped_defaults = {
+            let mut seen = Vec::<CssEntry>::new();
+            for entry in config.property_defaults {
+                if let Some(pos) = seen.iter().position(|e| e.property == entry.property) {
+                    seen[pos].value = entry.value;
+                } else {
+                    seen.push(entry);
+                }
+            }
+            seen
         };
+
+        let defaults_block = if deduped_defaults.is_empty() {
+            String::new()
+        } else {
+            let declarations: Vec<String> = deduped_defaults
+                .iter()
+                .map(|entry| format!("{}: {}", entry.property, entry.value))
+                .collect();
+            format!(
+                "*, ::after, ::before, ::backdrop, ::file-selector-button {{ {} }}",
+                declarations.join("; ")
+            )
+        };
+
+        let base_css = [user_base, defaults_block, theme_props]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
 
         Ok(Self {
             static_rules,
@@ -702,5 +728,22 @@ mod tests {
 
         let err = result.unwrap_err();
         assert!(err.to_string().contains("p-[invalid"));
+    }
+
+    #[test]
+    fn property_defaults_dedup_last_wins() {
+        let mut config = Config::new();
+        config
+            .property_defaults
+            .push(CssEntry::new("--tw-foo", "first"));
+        config
+            .property_defaults
+            .push(CssEntry::new("--tw-foo", "second"));
+
+        let compiled = compile(config);
+        let base = compiled.base_css();
+
+        assert!(base.contains("second"), "last value should survive dedup");
+        assert!(!base.contains("first"), "first value should be overwritten");
     }
 }

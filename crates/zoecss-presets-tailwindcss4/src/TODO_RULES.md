@@ -131,8 +131,8 @@ This document tracks ZoeCSS implementation progress of all Tailwind CSS v4 utili
 
 ## Effects
 
-- [x] Box Shadow (`shadow`, `shadow-sm`, `shadow-md`, `shadow-lg`, `shadow-xl`, `shadow-2xl`, `shadow-inner`, `shadow-none`) — `shadow-none` + theme sizes (2xs–2xl) done, bare `shadow` default and `shadow-inner` missing
-- [ ] Box Shadow Color (`shadow-inherit`, `shadow-current`, `shadow-transparent`, `shadow-{color}-{shade}`)
+- [x] Box Shadow (`shadow`, `shadow-sm`, `shadow-md`, `shadow-lg`, `shadow-xl`, `shadow-2xl`, `shadow-inner`, `shadow-none`) — sizes use composition pattern with `--tw-shadow` / `--tw-shadow-colored` custom properties
+- [x] Box Shadow Color (`shadow-inherit`, `shadow-current`, `shadow-transparent`, `shadow-{color}-{shade}`) — keyword statics + dynamic theme color lookup
 - [x] Opacity (`opacity-0`, `opacity-5…100`)
 - [x] Mix Blend Mode (`mix-blend-normal`, `mix-blend-multiply`, `mix-blend-screen`, `mix-blend-overlay`, …)
 - [x] Background Blend Mode (`bg-blend-normal`, `bg-blend-multiply`, `bg-blend-screen`, `bg-blend-overlay`, …)
@@ -142,7 +142,8 @@ This document tracks ZoeCSS implementation progress of all Tailwind CSS v4 utili
 - [x] Blur (`blur`, `blur-none`, `blur-sm`, `blur-md`, `blur-lg`, `blur-xl`, `blur-2xl`, `blur-3xl`) — `blur-none` + theme sizes done, bare `blur` default missing
 - [x] Brightness (`brightness-0`, `brightness-50`, `brightness-75`, `brightness-100`, `brightness-125`, `brightness-150`, `brightness-200`)
 - [x] Contrast (`contrast-0`, `contrast-50`, `contrast-75`, `contrast-100`, `contrast-125`, `contrast-150`, `contrast-200`)
-- [x] Drop Shadow (`drop-shadow`, `drop-shadow-sm`, `drop-shadow-md`, `drop-shadow-lg`, `drop-shadow-xl`, `drop-shadow-2xl`, `drop-shadow-none`) — `drop-shadow-none` + theme sizes done, bare `drop-shadow` default missing
+- [x] Drop Shadow (`drop-shadow`, `drop-shadow-sm`, `drop-shadow-md`, `drop-shadow-lg`, `drop-shadow-xl`, `drop-shadow-2xl`, `drop-shadow-none`) — sizes use composition pattern with `--tw-drop-shadow` / `--tw-drop-shadow-colored` custom properties
+- [x] Drop Shadow Color (`drop-shadow-inherit`, `drop-shadow-current`, `drop-shadow-transparent`, `drop-shadow-{color}-{shade}`) — keyword statics + dynamic theme color lookup
 - [x] Grayscale (`grayscale`, `grayscale-0`)
 - [x] Hue Rotate (`hue-rotate-0`, `hue-rotate-15`, `hue-rotate-30`, `hue-rotate-60`, `hue-rotate-90`, `hue-rotate-180`)
 - [x] Invert (`invert`, `invert-0`)

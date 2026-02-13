@@ -1,10 +1,16 @@
-use zoecss_config::{Preset, Rule};
-use zoecss_core::{CssEntries, CssEntry};
+use zoecss_config::{CssEntries, CssEntry, Preset, Rule};
 
 /// Registers translate utility rules consuming `{theme.spacing.$1}`.
 ///
 /// Uses CSS custom properties so axis-specific utilities compose correctly.
 pub fn register(preset: &mut Preset) {
+    preset
+        .property_defaults
+        .push(CssEntry::new("--tw-translate-x", "0"));
+    preset
+        .property_defaults
+        .push(CssEntry::new("--tw-translate-y", "0"));
+
     // translate-x
     preset.rules.push(Rule::Pattern {
         pattern: r"^translate-x-(.+)$".into(),
